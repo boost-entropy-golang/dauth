@@ -14,14 +14,24 @@
 
 package null
 
-import "go.uber.org/zap"
+import (
+	"github.com/streamingfast/dauth/authenticator"
+	"go.uber.org/zap"
+)
+
+var _ authenticator.Credentials = (*credentials)(nil)
 
 type credentials struct {
 	ipAddress string
 }
 
-func (c *credentials) GetUserID() string {
-	return ""
+func (c *credentials) Features() *authenticator.Features {
+	return &authenticator.Features{}
+}
+
+func (c *credentials) Identification() *authenticator.Identification {
+	return &authenticator.Identification{}
+
 }
 
 func newCredentials(ipAddress string) *credentials {
