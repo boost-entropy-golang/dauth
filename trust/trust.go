@@ -2,9 +2,9 @@ package trust
 
 import (
 	"context"
-	"net/url"
 
 	"github.com/streamingfast/dauth"
+	"google.golang.org/grpc/metadata"
 )
 
 func Register() {
@@ -17,10 +17,10 @@ func Register() {
 type trustPlugin struct {
 }
 
-func (t *trustPlugin) Close() error {
-	return nil
-}
-
-func (t *trustPlugin) Authenticate(ctx context.Context, path string, headers url.Values, ipAddress string) (url.Values, error) {
-	return headers, nil
+func (t *trustPlugin) Authenticate(ctx context.Context, path string, headers map[string][]string, ipAddress string) (context.Context, metadata.MD, error) {
+	out := metadata.MD{}
+	for key, values := range headers {
+		out.Set(key, values...)
+	}
+	return metadata.NewIncomingContext(ctx, out), headers, nil
 }
