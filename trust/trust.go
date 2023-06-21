@@ -2,9 +2,9 @@ package trust
 
 import (
 	"context"
+	"strings"
 
 	"github.com/streamingfast/dauth"
-	"google.golang.org/grpc/metadata"
 )
 
 func Register() {
@@ -17,10 +17,10 @@ func Register() {
 type trustPlugin struct {
 }
 
-func (t *trustPlugin) Authenticate(ctx context.Context, path string, headers map[string][]string, ipAddress string) (context.Context, metadata.MD, error) {
-	out := metadata.MD{}
+func (t *trustPlugin) Authenticate(ctx context.Context, path string, headers map[string][]string, ipAddress string) (context.Context, error) {
+	out := make(dauth.TrustedHeaders)
 	for key, values := range headers {
-		out.Set(key, values...)
+		out[key] = strings.ToLower(values[0])
 	}
-	return metadata.NewIncomingContext(ctx, out), headers, nil
+	return dauth.WithTrustedHeaders(ctx, out), nil
 }

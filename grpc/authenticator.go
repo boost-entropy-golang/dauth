@@ -9,7 +9,6 @@ import (
 	"github.com/streamingfast/dauth"
 	pbauth "github.com/streamingfast/dauth/pb/sf/authentication/v1"
 	"github.com/streamingfast/dgrpc"
-	"google.golang.org/grpc/metadata"
 )
 
 func Register() {
@@ -47,7 +46,7 @@ func newAuthenticator(serverAddr string) (*authenticatorPlugin, error) {
 	return ap, nil
 }
 
-func (a *authenticatorPlugin) Authenticate(ctx context.Context, path string, headers map[string][]string, ipAddress string) (context.Context, metadata.MD, error) {
+func (a *authenticatorPlugin) Authenticate(ctx context.Context, path string, headers map[string][]string, ipAddress string) (context.Context, error) {
 	req := &pbauth.AuthRequest{
 		Url:     path,
 		Ip:      ipAddress,
@@ -65,12 +64,12 @@ func (a *authenticatorPlugin) Authenticate(ctx context.Context, path string, hea
 
 	resp, err := a.client.Authenticate(ctx, req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("auth grpc service failed: %w", err)
+		return nil, fmt.Errorf("auth grpc service failed: %w", err)
 	}
 
-	out := metadata.MD{}
+	out := make(dauth.TrustedHeaders)
 	for _, authenticatedHeader := range resp.AuthenticatedHeaders {
-		out.Set(authenticatedHeader.Key, authenticatedHeader.Value)
+		out[authenticatedHeader.Key] = strings.ToLower(authenticatedHeader.Value)
 	}
-	return metadata.NewIncomingContext(ctx, out), out, nil
+	return dauth.WithTrustedHeaders(ctx, out), nil
 }
