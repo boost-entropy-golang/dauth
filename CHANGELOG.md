@@ -7,4 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* *Breaking* `middleware/connect/NewAuthInterceptor` requires a `logger *zap.Logger` has its last argument now.
+* *Breaking* `middleware/grpc/UnaryAuthChecker` requires a `logger *zap.Logger` has its last argument now.
+* *Breaking* `middleware/grpc/StreamAuthChecker` requires a `logger *zap.Logger` has its last argument now.
+
 * License changed to Apache 2.0
