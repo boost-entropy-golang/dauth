@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -14,12 +15,17 @@ import (
 )
 
 func Register() {
-	dauth.Register("grpc", func(configURL string) (dauth.Authenticator, error) {
-		config, err := newConfig(configURL)
+	dauth.Register("grpc", func(configURL string, logger *zap.Logger) (dauth.Authenticator, error) {
+		c, err := newConfig(configURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to setup config: %w", err)
 		}
-		return newAuthenticator(config)
+		logger.Info("setting up grpc authenticator",
+			zap.String("config_url", configURL),
+			zap.String("endpoint", c.endpoint),
+			zap.Bool("continuous_auth", c.enabledContinuousAuth),
+		)
+		return newAuthenticator(c, logger)
 	})
 }
 
@@ -28,9 +34,10 @@ type authenticatorPlugin struct {
 	healthClient          pbhealth.HealthClient
 	continuousInterval    time.Duration
 	enabledContinuousAuth bool
+	logger                *zap.Logger
 }
 
-func newAuthenticator(c *config) (*authenticatorPlugin, error) {
+func newAuthenticator(c *config, logger *zap.Logger) (*authenticatorPlugin, error) {
 	conn, err := dgrpc.NewInternalNoWaitClient(c.endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("new auth grpc client: %w", err)
@@ -41,6 +48,7 @@ func newAuthenticator(c *config) (*authenticatorPlugin, error) {
 		enabledContinuousAuth: c.enabledContinuousAuth,
 		continuousInterval:    10 * time.Second,
 		healthClient:          pbhealth.NewHealthClient(conn),
+		logger:                logger,
 	}
 	return ap, nil
 }
