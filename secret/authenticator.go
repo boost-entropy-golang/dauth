@@ -48,6 +48,7 @@ type authenticator struct {
 	userID   string
 	apiKeyID string
 	meta     string
+	others   map[string]string
 }
 
 func newAuthenticatorFromURL(urlRaw string) (*authenticator, error) {
@@ -58,25 +59,19 @@ func newAuthenticatorFromURL(urlRaw string) (*authenticator, error) {
 
 	params := urlObject.Query()
 
+	others := map[string]string{}
+	for key, values := range params {
+		if key != "user_id" && key != "api_key_id" && key != "meta" {
+			others[key] = strings.Join(values, ",")
+		}
+	}
+
 	return &authenticator{
 		secret:   urlObject.Host,
 		userID:   params.Get("user_id"),
 		apiKeyID: params.Get("api_key_id"),
 		meta:     params.Get("meta"),
-	}, nil
-}
-
-func newAuthenticator(secret string, userID string, apiKeyID string) (*authenticator, error) {
-	if secret == "" {
-		panic("Secret cannot be empty string")
-	}
-
-	if secret == "" {
-		return nil, errors.New("missing mandatory secret value")
-	}
-
-	return &authenticator{
-		secret: secret,
+		others:   others,
 	}, nil
 }
 

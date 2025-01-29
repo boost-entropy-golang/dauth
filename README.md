@@ -8,12 +8,10 @@ This is StreamingFast authentication library.
 
 ## How it works
 
-At it's core StreamingFast services will look for a `TrustedHeaders` object within
-the context to get user and request information. The `dauth` library offers two abstractions (called plugins) to set up a `TrustedHeaders` object in the context:
+At it's core StreamingFast services will look for a `TrustedHeaders` object within the context to get user and request information. The `dauth` library offers two abstractions (called plugins) to set up a `TrustedHeaders` object in the context:
 
 - Trusted Plugin
-- GRPC Plugin
-
+- gRPC Plugin
 
 You can think of `TrustedHeaders` as HTTP headers. StreamingFast services will expect (assuming the call is authenticated) at least 3 headers to identify the user.
 
@@ -23,6 +21,7 @@ You can think of `TrustedHeaders` as HTTP headers. StreamingFast services will e
 
 To control the execution of Substreams on a per-user basis the following `TrustedHeaders` can be set:
 
+- `X-Sf-Substreams-Stage-Layer-Parallel-Executor-Max-Count`
 - `X-Sf-Substreams-Parallel-Jobs`
 - `X-Sf-Substreams-Cache-Tag`
 
@@ -32,9 +31,9 @@ An auth plugin will take as input the incoming HTTP Headers, as well as the ip a
 which header to keep or trust is up to the implementation. The plugin is configured via a specific DSN. We currently support 3 plugins
 
 - Trusted Plugin: `trust://`
-- GRPC Plugin: `grpc://hostname:port`
+- gRPC Plugin: `grpc://hostname:port`
 - Null Plugin: `null://`
-- Secret Plugin: `secret://this-is-the-secret-and-fits-in-the-host-field?[user_id=<value>]&[api_key_id=<value>]`
+- Secret Plugin: `secret://this-is-the-secret-and-fits-in-the-host-field?[user_id=<value>]&[api_key_id=<value>]&[<trusted-header-key>=<trusted-header-value>...]`
 
 *Trusted Plugin*
 
@@ -43,7 +42,7 @@ You can change the default "trust-everything" behavior by specifying an exclusiv
 
 ![Trusted Plugin](./docs/trusted_plugin.png)
 
-*GRPC plugin*
+*gRPC plugin*
 
 The gRPC plugin will perform a grpc request to the defined endpoint. The response will contain the `TrustedHeaders`. An example of this would be a `grpc://localhost:9000` where
 the gRPC service is a sidecar. This sidecar could, for example, read a JWT from the incoming `Authorization` header and return the appropriate values for the *TrustedHeaders* `x-sf-user-id` and `x-sf-api-key-id`.
@@ -54,7 +53,7 @@ The gROC plugin supports continuous auth.To enable continuous auth you can use `
 
 Please note that when using this plugin in a Substreams tier1/tier2 infrastructure, then only the tier1 nodes should authenticate requests using gRPC, while all tier2 nodes should use the Trusted Plugin (`trust://`) instead. Sub-requests to tier2 nodes have already been authenticated on tier1 nodes, so re-authenticating on tier2 nodes is not necessary and might result in undesired effects such as JWT expiration in running Substreams.
 
-![GRPC Plugin](./docs/grpc_plugin.png)
+![gRPC Plugin](./docs/grpc_plugin.png)
 
 *Null Plugin*
 
@@ -70,7 +69,7 @@ The plugin upon valid request populate the trusted headers:
 - `x-sf-api-key-id`
 - `x-real-ip`
 
-Where `x-real-ip` is the IP of the request and `x-sf-user-id` and `x-sf-api-key-id` to their respective config value `user_id` and `api_key_id` of the `secret://` URL.
+Where `x-real-ip` is the IP of the request and `x-sf-user-id` and `x-sf-api-key-id` to their respective config value `user_id` and `api_key_id` of the `secret://` URL. If the config value contains others values, they are treated as a trusted header right away and put in the trusted headers too.
 
 ## Contributing
 
