@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"connectrpc.com/connect"
-
 	"github.com/streamingfast/dauth"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"

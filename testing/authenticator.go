@@ -27,7 +27,7 @@ import (
 
 func Register() {
 	// secret://this-is-the-secret-and-fits-in-the-host-field?[user_id=<value>]&[api_key_id=<value>]
-	dauth.Register("secret", func(configURL string, logger *zap.Logger) (dauth.Authenticator, error) {
+	dauth.Register("testing", func(configURL string, logger *zap.Logger) (dauth.Authenticator, error) {
 		authenticator, err := newAuthenticatorFromURL(configURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to setup secret config: %w", err)
@@ -48,7 +48,6 @@ type authenticator struct {
 	userID   string
 	apiKeyID string
 	meta     string
-	others   map[string]string
 }
 
 func newAuthenticatorFromURL(urlRaw string) (*authenticator, error) {
@@ -59,40 +58,30 @@ func newAuthenticatorFromURL(urlRaw string) (*authenticator, error) {
 
 	params := urlObject.Query()
 
-	others := map[string]string{}
-	for key, values := range params {
-		if key != "user_id" && key != "api_key_id" && key != "meta" {
-			others[key] = strings.Join(values, ",")
-		}
-	}
-
 	return &authenticator{
 		secret:   urlObject.Host,
 		userID:   params.Get("user_id"),
 		apiKeyID: params.Get("api_key_id"),
 		meta:     params.Get("meta"),
-		others:   others,
+	}, nil
+}
+
+func newAuthenticator(secret string, userID string, apiKeyID string) (*authenticator, error) {
+	if secret == "" {
+		panic("Secret cannot be empty string")
+	}
+
+	if secret == "" {
+		return nil, errors.New("missing mandatory secret value")
+	}
+
+	return &authenticator{
+		secret: secret,
 	}, nil
 }
 
 // Authenticate implements dauth.Authenticator.
 func (a *authenticator) Authenticate(ctx context.Context, path string, headers map[string][]string, ipAddress string) (context.Context, error) {
-	authorizationHeaders := headers["authorization"]
-	if len(authorizationHeaders) == 0 {
-		return ctx, errors.New("missing authorization header")
-	}
-
-	var lastAuthErr error
-	for _, authorizationHeader := range authorizationHeaders {
-		if err := a.validateAuthHeader(authorizationHeader); err != nil {
-			lastAuthErr = err
-		}
-	}
-
-	if lastAuthErr != nil {
-		return ctx, lastAuthErr
-	}
-
 	out := make(dauth.TrustedHeaders)
 	out[dauth.SFHeaderIP] = ipAddress
 	out[dauth.SFHeaderUserID] = a.userID
