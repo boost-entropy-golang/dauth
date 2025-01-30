@@ -62,7 +62,7 @@ func newAuthenticatorFromURL(urlRaw string) (*authenticator, error) {
 	others := map[string]string{}
 	for key, values := range params {
 		if key != "user_id" && key != "api_key_id" && key != "meta" {
-			others[key] = strings.Join(values, ",")
+			others[strings.ToLower(key)] = strings.Join(values, ",")
 		}
 	}
 

@@ -26,7 +26,7 @@ func Register() {
 				case "meta":
 					headers[dauth.SFHeaderMeta] = values[0]
 				default:
-					headers[key] = strings.Join(values, ",")
+					headers[strings.ToLower(key)] = strings.Join(values, ",")
 				}
 			}
 		}
